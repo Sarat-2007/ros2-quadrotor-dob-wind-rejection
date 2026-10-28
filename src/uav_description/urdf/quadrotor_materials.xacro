@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <material name="carbon_fiber">
+    <color rgba="0.12 0.12 0.13 1.0"/>
+  </material>
+
+  <material name="chassis_top">
+    <color rgba="0.85 0.85 0.88 1.0"/>
+  </material>
+
+  <material name="motor_bell">
+    <color rgba="0.2 0.2 0.22 1.0"/>
+  </material>
+
+  <material name="anodized_red">
+    <color rgba="0.85 0.1 0.1 1.0"/>
+  </material>
+
+  <material name="anodized_blue">
+    <color rgba="0.1 0.35 0.85 1.0"/>
+  </material>
+
+  <material name="propeller_red">
+    <color rgba="0.9 0.15 0.15 0.85"/>
+  </material>
+
+  <material name="propeller_black">
+    <color rgba="0.18 0.18 0.2 0.85"/>
+  </material>
+
+  <material name="landing_skid">
+    <color rgba="0.25 0.25 0.25 1.0"/>
+  </material>
+
+  <material name="camera_body">
+    <color rgba="0.05 0.05 0.05 1.0"/>
+  </material>
+
+  <material name="camera_lens">
+    <color rgba="0.0 0.6 0.9 0.9"/>
+  </material>
+
+  <material name="gps_mast">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+
+  <!-- Gazebo Material References & Gravity Coupling -->
+  <gazebo reference="base_link">
+    <material>Gazebo/DarkGrey</material>
+    <gravity>0</gravity>
+  </gazebo>
+
+  <gazebo reference="rotor_0">
+    <material>Gazebo/Red</material>
+  </gazebo>
+  <gazebo reference="rotor_1">
+    <material>Gazebo/Red</material>
+  </gazebo>
+  <gazebo reference="rotor_2">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+  <gazebo reference="rotor_3">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+  <gazebo reference="landing_gear">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+
+</robot>
