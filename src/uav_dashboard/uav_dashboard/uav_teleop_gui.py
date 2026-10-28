@@ -238,11 +238,19 @@ class OfficialGcsDashboard:
 
         c3 = tk.Frame(ctrl_box, bg='#242933')
         c3.pack(fill=tk.X, pady=2)
-        self.scale_wind = ttk.Scale(c3, from_=0.0, to=8.0, value=0.0, command=self.on_wind_slide)
+        self.scale_wind = ttk.Scale(c3, from_=0.0, to=12.0, value=0.0, command=self.on_wind_slide)
         self.scale_wind.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 6))
 
-        tk.Button(c3, text="Inject 8 m/s Gust", bg='#30363d', fg='#e6edf3', font=('Helvetica', 8, 'bold'),
+        tk.Button(c3, text="Inject Gust (Slider)", bg='#30363d', fg='#e6edf3', font=('Helvetica', 8, 'bold'),
                   relief='flat', command=self.do_trigger_gust).pack(side=tk.RIGHT)
+
+        # Quick Gust Presets
+        c4 = tk.Frame(ctrl_box, bg='#242933')
+        c4.pack(fill=tk.X, pady=(3, 2))
+        tk.Label(c4, text="Quick Shock Gusts:", bg='#242933', fg='#8b949e', font=('Helvetica', 8)).pack(side=tk.LEFT)
+        for g_val in [4.0, 8.0, 10.0]:
+            tk.Button(c4, text=f"{int(g_val)} m/s", bg='#30363d', fg='#e6edf3', font=('Helvetica', 8),
+                      relief='flat', command=lambda v=g_val: self.do_trigger_custom_gust(v)).pack(side=tk.LEFT, padx=3)
 
         # 5. Live Telemetry HUD Table
         hud_box = tk.LabelFrame(self.root, text=" Live Flight Telemetry ",
@@ -316,8 +324,15 @@ class OfficialGcsDashboard:
         self.ros_node.wind_pub.publish(msg)
 
     def do_trigger_gust(self):
+        slider_val = self.scale_wind.get()
+        gust_mag = float(slider_val) if slider_val >= 1.0 else 8.0
         msg = Float32()
-        msg.data = 8.0
+        msg.data = gust_mag
+        self.ros_node.gust_pub.publish(msg)
+
+    def do_trigger_custom_gust(self, val):
+        msg = Float32()
+        msg.data = float(val)
         self.ros_node.gust_pub.publish(msg)
 
     def toggle_dob(self):
