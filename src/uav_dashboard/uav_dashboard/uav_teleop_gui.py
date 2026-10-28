@@ -13,15 +13,16 @@ Features:
 
 import sys
 import math
+import numpy as np
 import tkinter as tk
 from tkinter import ttk
 import threading
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist, Vector3, WrenchStamped
+from geometry_msgs.msg import Twist, Vector3, WrenchStamped, PoseStamped, Vector3Stamped
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Empty, String, Bool, Float32
+from std_msgs.msg import Empty, String, Bool, Float32, Int32
 
 class GcsRosBridge(Node):
     def __init__(self):
@@ -37,6 +38,9 @@ class GcsRosBridge(Node):
         self.dob_pub = self.create_publisher(Bool, '/uav/set_dob_mode', 10)
         self.wind_pub = self.create_publisher(Vector3, '/uav/set_wind', 10)
         self.gust_pub = self.create_publisher(Float32, '/uav/trigger_gust', 10)
+        self.traj_mode_pub = self.create_publisher(Int32, '/uav/set_trajectory_mode', 10)
+        self.setpoint_pub = self.create_publisher(PoseStamped, '/uav/setpoint', 10)
+        self.setpoint_vel_pub = self.create_publisher(Vector3Stamped, '/uav/setpoint_velocity', 10)
 
         # Telemetry State
         self.lock = threading.Lock()
@@ -74,7 +78,7 @@ class OfficialGcsDashboard:
         self.root = root
         self.ros_node = ros_node
         self.root.title("UAV GROUND CONTROL STATION | Flight Autopilot & Telemetry")
-        self.root.geometry("560x780")
+        self.root.geometry("580x870")
         self.root.configure(bg='#1a1d24')
         self.root.resizable(False, False)
 
@@ -87,10 +91,29 @@ class OfficialGcsDashboard:
         self._release_timers = {}
         self._is_streaming = False
 
+        # Autonomous Surveillance Patrol Mission State
+        self.patrol_active = False
+        self.patrol_waiting_for_takeoff = False
+        self.patrol_wp_idx = 0
+        self.patrol_target_pos = np.array([0.0, 0.0, 2.0])
+        self.patrol_speed = 1.2
+        self.patrol_waypoints = [
+            {"name": "Helipad Transit Corridor", "pos": [0.0, 1.5, 2.0], "desc": "Climb out & align with gate entry"},
+            {"name": "Inspection Gate Ingress", "pos": [0.0, 5.2, 2.2], "desc": "Fly through illuminated gate center"},
+            {"name": "East Sector Turn", "pos": [2.2, 4.5, 2.5], "desc": "Clear past Slalom Pylon 1"},
+            {"name": "Rooftop Observation Deck", "pos": [5.0, 0.5, 2.7], "desc": "Overfly elevated rooftop structure"},
+            {"name": "Industrial Tower A Perimeter", "pos": [5.5, -4.0, 2.6], "desc": "Perimeter inspection of Tower A"},
+            {"name": "South Sector Cross-Corridor", "pos": [2.5, -5.8, 2.4], "desc": "Transit between Industrial Towers"},
+            {"name": "Industrial Tower B Perimeter", "pos": [-3.5, -5.5, 2.4], "desc": "Perimeter inspection of Tower B"},
+            {"name": "West Sector Approach", "pos": [-3.5, -1.5, 2.2], "desc": "Fly inbound past Slalom Pylon 3"},
+            {"name": "Helipad Home Recovery", "pos": [0.0, 0.0, 2.0], "desc": "Return to base & lock station hover"}
+        ]
+
         self.setup_ui()
         self.bind_keyboard()
         self.update_telemetry_loop()
         self.teleop_stream_loop()
+        self.patrol_stream_loop()
 
         self.root.focus_force()
 
@@ -103,6 +126,8 @@ class OfficialGcsDashboard:
         widget.bind('<ButtonRelease-1>', lambda e: self.on_gui_btn_up(key_code))
 
     def on_gui_btn_down(self, key_code):
+        if self.patrol_active:
+            self.do_abort_patrol(reason="PILOT STICK OVERRIDE")
         self.active_keys.add(key_code)
         self.update_key_button_highlight(key_code, is_pressed=True)
 
@@ -147,7 +172,38 @@ class OfficialGcsDashboard:
                                   activebackground='#a82828', command=self.do_land)
         self.btn_land.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
 
-        # 3. Manual Flight Stick (D-Pad)
+        # 3. Autonomous Surveillance Mission Control Panel
+        mission_box = tk.LabelFrame(self.root, text=" Autonomous Surveillance Mission (3D Obstacle Arena) ",
+                                    font=('Helvetica', 9, 'bold'), bg='#242933', fg='#c9d1d9', padx=10, pady=6)
+        mission_box.pack(fill=tk.X, padx=12, pady=4)
+
+        m_btns = tk.Frame(mission_box, bg='#242933')
+        m_btns.pack(fill=tk.X, pady=2)
+
+        self.btn_start_patrol = tk.Button(m_btns, text="🎯 START AUTONOMOUS PATROL\n[Gate & Towers Perimeter Sweep]",
+                                          bg='#238636', fg='#ffffff', font=('Helvetica', 9, 'bold'),
+                                          relief='flat', height=2, activebackground='#2ea043',
+                                          command=self.do_start_patrol)
+        self.btn_start_patrol.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
+
+        self.btn_abort_patrol = tk.Button(m_btns, text="🛑 ABORT PATROL MISSION\n[Instant Station Hover]",
+                                          bg='#892222', fg='#ffffff', font=('Helvetica', 9, 'bold'),
+                                          relief='flat', height=2, activebackground='#a82828',
+                                          command=self.do_abort_patrol)
+        self.btn_abort_patrol.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=2)
+
+        m_status = tk.Frame(mission_box, bg='#1a1d24', padx=8, pady=4)
+        m_status.pack(fill=tk.X, pady=(4, 2))
+
+        self.lbl_patrol_status = tk.Label(m_status, text="MISSION STANDBY: Ready to deploy across 9 facility waypoints",
+                                          bg='#1a1d24', fg='#8b949e', font=('Helvetica', 9, 'bold'))
+        self.lbl_patrol_status.pack(anchor='w')
+
+        self.lbl_patrol_sub = tk.Label(m_status, text="Route: Helipad → Gate (0,5m) → Rooftop → Tower A → Tower B → Helipad",
+                                       bg='#1a1d24', fg='#58a6ff', font=('Helvetica', 8))
+        self.lbl_patrol_sub.pack(anchor='w')
+
+        # 4. Manual Flight Stick (D-Pad)
         dpad_box = tk.LabelFrame(self.root, text=" Manual Flight Control (Hold to Move) ",
                                  font=('Helvetica', 9, 'bold'), bg='#242933', fg='#c9d1d9', padx=10, pady=8)
         dpad_box.pack(fill=tk.X, padx=12, pady=6)
@@ -315,9 +371,13 @@ class OfficialGcsDashboard:
         self.ros_node.takeoff_pub.publish(Empty())
 
     def do_land(self):
+        if self.patrol_active:
+            self.do_abort_patrol(reason="LAND COMMANDED")
         self.ros_node.land_pub.publish(Empty())
 
     def do_hover(self):
+        if self.patrol_active:
+            self.do_abort_patrol(reason="POSITION HOLD COMMANDED")
         for t in self._release_timers.values():
             self.root.after_cancel(t)
         self._release_timers.clear()
@@ -331,7 +391,143 @@ class OfficialGcsDashboard:
         self.ros_node.clear_path_pub.publish(Empty())
 
     def do_reset_home(self):
+        if self.patrol_active:
+            self.do_abort_patrol(reason="RESET HOME COMMANDED")
         self.ros_node.reset_home_pub.publish(Empty())
+
+    # -------------------------------------------------------------
+    # Autonomous Surveillance Mission Control
+    # -------------------------------------------------------------
+    def do_start_patrol(self):
+        if self.patrol_active:
+            return
+        with self.ros_node.lock:
+            st = self.ros_node.status
+            current_pos = list(self.ros_node.pos)
+
+        self.patrol_active = True
+        self.patrol_wp_idx = 0
+        self.btn_start_patrol.config(text="● PATROL ACTIVE (SURVEILLANCE)...", bg='#1f6feb')
+
+        if st == "LANDED" or current_pos[2] < 0.5:
+            self.patrol_waiting_for_takeoff = True
+            self.ros_node.takeoff_pub.publish(Empty())
+            self.lbl_patrol_status.config(text="🚀 TAKEOFF CLIMB INITIATED: Climbing to safe transit altitude...", fg='#d29922')
+            self.lbl_patrol_sub.config(text="Waypoint tracking will commence automatically at 2.0 m.", fg='#8b949e')
+        else:
+            self.patrol_waiting_for_takeoff = False
+            self.patrol_target_pos = np.array(current_pos, dtype=float)
+            msg = Int32()
+            msg.data = 10
+            self.ros_node.traj_mode_pub.publish(msg)
+            self.lbl_patrol_status.config(text="🎯 AUTONOMOUS PATROL INITIATED: Tracking Waypoint 1", fg='#3fb950')
+            self.lbl_patrol_sub.config(text="Full 3D perimeter surveillance across inspection gate and industrial towers.", fg='#58a6ff')
+
+    def do_abort_patrol(self, reason="PILOT ABORT"):
+        if not self.patrol_active:
+            self.do_hover()
+            return
+        self.patrol_active = False
+        self.patrol_waiting_for_takeoff = False
+        msg = Int32()
+        msg.data = 0
+        self.ros_node.traj_mode_pub.publish(msg)
+        self.ros_node.hover_pub.publish(Empty())
+        self.ros_node.cmd_vel_pub.publish(Twist())
+        self.btn_start_patrol.config(text="🎯 START AUTONOMOUS PATROL\n[Gate & Towers Perimeter Sweep]", bg='#238636')
+        self.lbl_patrol_status.config(text=f"⚠️ PATROL ABORTED: {reason}", fg='#f85149')
+        self.lbl_patrol_sub.config(text="Station hover locked at current coordinates. Pilot sticks active.", fg='#e6edf3')
+
+    def patrol_stream_loop(self):
+        if self.patrol_active:
+            with self.ros_node.lock:
+                current_pos = np.array(self.ros_node.pos, dtype=float)
+                current_status = self.ros_node.status
+
+            if self.patrol_waiting_for_takeoff:
+                if current_pos[2] >= 1.80:
+                    self.patrol_waiting_for_takeoff = False
+                    self.patrol_wp_idx = 0
+                    self.patrol_target_pos = np.copy(current_pos)
+                    msg = Int32()
+                    msg.data = 10
+                    self.ros_node.traj_mode_pub.publish(msg)
+                    self.lbl_patrol_status.config(text="✅ ALTITUDE REACHED: Engaging Waypoint 1 (Inspection Gate)", fg='#3fb950')
+                else:
+                    self.lbl_patrol_status.config(
+                        text=f"🚀 TAKEOFF CLIMB: {current_pos[2]:.2f} / 2.00 m (Ascending)",
+                        fg='#d29922'
+                    )
+            else:
+                if self.patrol_wp_idx < len(self.patrol_waypoints):
+                    wp = self.patrol_waypoints[self.patrol_wp_idx]
+                    wp_pos = np.array(wp["pos"], dtype=float)
+                    d_vec = wp_pos - current_pos
+                    dist_to_wp = float(np.linalg.norm(d_vec))
+
+                    # Arrival tolerance: 0.40m
+                    if dist_to_wp < 0.40:
+                        self.patrol_wp_idx += 1
+                        if self.patrol_wp_idx >= len(self.patrol_waypoints):
+                            # Mission successfully finished!
+                            self.patrol_active = False
+                            msg = Int32()
+                            msg.data = 0
+                            self.ros_node.traj_mode_pub.publish(msg)
+                            self.ros_node.hover_pub.publish(Empty())
+                            self.btn_start_patrol.config(text="🎯 START AUTONOMOUS PATROL\n[Gate & Towers Perimeter Sweep]", bg='#238636')
+                            self.lbl_patrol_status.config(text="✅ MISSION COMPLETE: RECOVERED TO BASE HELIPAD", fg='#3fb950')
+                            self.lbl_patrol_sub.config(text="All 9 surveillance waypoints traversed. Holding position at (0, 0, 2m).", fg='#58a6ff')
+                            self.root.after(50, self.patrol_stream_loop)
+                            return
+                        else:
+                            wp = self.patrol_waypoints[self.patrol_wp_idx]
+                            wp_pos = np.array(wp["pos"], dtype=float)
+                            d_vec = wp_pos - current_pos
+                            dist_to_wp = float(np.linalg.norm(d_vec))
+
+                    # Advance virtual carrot towards waypoint at cruising speed
+                    dt = 0.05
+                    step = self.patrol_speed * dt
+                    carrot_vec = wp_pos - self.patrol_target_pos
+                    dist_carrot = float(np.linalg.norm(carrot_vec))
+                    if dist_carrot > step:
+                        self.patrol_target_pos += (carrot_vec / dist_carrot) * step
+                    else:
+                        self.patrol_target_pos = np.copy(wp_pos)
+
+                    # Clamp carrot if drone is lagging behind (e.g. during strong wind gust)
+                    drone_to_carrot = self.patrol_target_pos - current_pos
+                    lead_dist = float(np.linalg.norm(drone_to_carrot))
+                    if lead_dist > 0.65:
+                        self.patrol_target_pos = current_pos + (drone_to_carrot / lead_dist) * 0.65
+
+                    # Publish setpoint to flight controller
+                    sp_msg = PoseStamped()
+                    sp_msg.header.stamp = self.ros_node.get_clock().now().to_msg()
+                    sp_msg.header.frame_id = 'world'
+                    sp_msg.pose.position.x = float(self.patrol_target_pos[0])
+                    sp_msg.pose.position.y = float(self.patrol_target_pos[1])
+                    sp_msg.pose.position.z = float(self.patrol_target_pos[2])
+
+                    # Calculate heading orientation towards target waypoint
+                    target_yaw = math.atan2(d_vec[1], d_vec[0])
+                    sp_msg.pose.orientation.w = float(math.cos(target_yaw * 0.5))
+                    sp_msg.pose.orientation.z = float(math.sin(target_yaw * 0.5))
+                    self.ros_node.setpoint_pub.publish(sp_msg)
+
+                    # Update UI progress
+                    pct = int(((self.patrol_wp_idx) / len(self.patrol_waypoints)) * 100)
+                    self.lbl_patrol_status.config(
+                        text=f"PATROL WP {self.patrol_wp_idx + 1}/{len(self.patrol_waypoints)}: {wp['name']} ({dist_to_wp:.1f}m | {pct}%)",
+                        fg='#58a6ff'
+                    )
+                    self.lbl_patrol_sub.config(
+                        text=f"Target: [{wp_pos[0]:.1f}, {wp_pos[1]:.1f}, {wp_pos[2]:.1f}] m | {wp['desc']}",
+                        fg='#8b949e'
+                    )
+
+        self.root.after(50, self.patrol_stream_loop)
 
     def on_speed_slide(self, _=None):
         self.teleop_speed = self.scale_speed.get()
@@ -406,6 +602,8 @@ class OfficialGcsDashboard:
         elif k in ['c']:
             self.do_clear_path()
         else:
+            if self.patrol_active:
+                self.do_abort_patrol(reason="PILOT KEY OVERRIDE")
             self.active_keys.add(k)
             self.update_key_button_highlight(k, is_pressed=True)
 
@@ -500,6 +698,10 @@ class OfficialGcsDashboard:
             self.lbl_status_banner.config(text=f"■ POSITION HOLD: HOVERING AT {p[2]:.2f}m", fg='#3fb950')
         elif st == "TELEOP":
             self.lbl_status_banner.config(text=f"▶ FLIGHT ACTIVE: {spd:.2f} m/s (MANUAL PILOT)", fg='#3fb950')
+        elif st == "TRAJECTORY":
+            wp_num = self.patrol_wp_idx + 1 if self.patrol_active else 1
+            tot = len(self.patrol_waypoints)
+            self.lbl_status_banner.config(text=f"✈ AUTONOMOUS PATROL ACTIVE: WP {wp_num}/{tot} ({spd:.2f} m/s)", fg='#58a6ff')
         elif st == "LANDING":
             self.lbl_status_banner.config(text=f"▼ DESCENDING: CONTROLLED LANDING ({p[2]:.2f}m)...", fg='#f85149')
         else:

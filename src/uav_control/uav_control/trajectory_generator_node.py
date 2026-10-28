@@ -74,7 +74,7 @@ class TrajectoryGeneratorNode(Node):
     def mode_cb(self, msg: Int32):
         old_mode = self.mode
         self.mode = msg.data
-        if self.mode == 0:
+        if self.mode not in [1, 2, 3]:
             self.current_vel = np.array([0.0, 0.0, 0.0])
             self.current_acc = np.array([0.0, 0.0, 0.0])
         elif self.mode == 1:
@@ -155,12 +155,9 @@ class TrajectoryGeneratorNode(Node):
         self.ref_path_pub.publish(path)
 
     def timer_cb(self):
+        if self.mode not in [1, 2, 3]:
+            return
         now = self.get_clock().now()
-
-        if self.mode == 0:
-            # Stationary Hover
-            self.current_vel = np.array([0.0, 0.0, 0.0])
-            self.current_acc = np.array([0.0, 0.0, 0.0])
 
         elif self.mode == 1:
             # Directed Velocity Flight with smooth S-curve ramp

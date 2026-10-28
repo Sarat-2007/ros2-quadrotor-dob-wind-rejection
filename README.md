@@ -16,7 +16,9 @@ An industrial-grade, 6-DOF quadrotor unmanned aerial vehicle (UAV) flight dynami
 - **73.3% Gust Drift Reduction**: Rigorously benchmarked against standard industrial PID controllers under violent $8.0\text{ m/s}$ ($10.33\text{ N}$) sudden wind gusts.
 - **Rayleigh Fluid Aerodynamics**: Quadratic aerodynamic drag ($F_d = -\frac{1}{2}\rho C_d A |v_{rel}| v_{rel}$) coupled with 1-cosine gust profiles and Dryden-like stochastic atmospheric turbulence.
 - **High-Fidelity 3D Drone Model**: Modular URDF/Xacro model featuring central carbon-fiber plates, landing skids, brushless motors, continuous rotating joints with ODE physics limits, and active motor disarm upon landing.
-- **Industrial Ground Control Station (GCS)**: Aerospace-grade dark slate UI (`#1a1d24`) providing uninterrupted pilot stick teleoperation, live flight status, DOB mode toggling, and 1-click $8\text{ m/s}$ gust triggers.
+- **Autonomous Surveillance Patrol Mission**: 1-Click autonomous mission traversing a 9-waypoint perimeter inspection route across the 3D obstacle arena (flying through the illuminated Inspection Gate at $(0, 5\text{ m})$, surveying the Elevated Rooftop Station, inspecting Industrial Towers A & B, and precision landing back on the Helipad).
+- **Fail-Safe Pilot Override & Emergency Abort**: Instant station hover locking and priority hand-off to manual flight sticks upon clicking "🛑 ABORT PATROL" or touching any pilot flight control.
+- **Industrial Ground Control Station (GCS)**: Aerospace-grade dark slate UI (`#1a1d24`) providing uninterrupted pilot stick teleoperation, dynamic aerodynamic fluid drag calculator, live flight status, DOB mode toggling, and 1-click $8\text{ m/s}$ gust triggers.
 - **Fully Automated Verification Suite**: Headless and visual test suite validating the 6-stage flight lifecycle, disturbance estimation, and empirical PID comparison.
 
 ---
@@ -187,6 +189,8 @@ source install/setup.bash
 
 | Control | Action | Autopilot Behavior |
 | :--- | :--- | :--- |
+| **🎯 START AUTONOMOUS PATROL** | Click | Initiates automatic takeoff climb (if landed) and autonomous traversal of 9 facility waypoints across the 3D obstacle arena |
+| **🛑 ABORT PATROL MISSION** | Click | Instant emergency override; halts trajectory, cancels mission, and locks drone into rock-solid station hover |
 | **TAKEOFF** | Click | Propellers spin up, climbs smoothly to $2.0\text{ m}$, settles into `HOVER` |
 | **FORWARD ($\mathbf{\Delta}$)** | **Click & Hold** | Continuous forward motion ($+1.2\text{ m/s}$); brakes to hover upon release |
 | **BACKWARD ($\mathbf{\nabla}$)**| **Click & Hold** | Continuous reverse motion ($-1.2\text{ m/s}$) |

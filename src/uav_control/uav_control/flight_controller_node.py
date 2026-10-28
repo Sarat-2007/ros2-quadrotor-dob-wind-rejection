@@ -259,6 +259,11 @@ class FlightControllerNode(Node):
             self.target_pos[0] = msg.pose.position.x
             self.target_pos[1] = msg.pose.position.y
             self.target_pos[2] = msg.pose.position.z
+            q = msg.pose.orientation
+            if abs(q.w) > 1e-4 or abs(q.z) > 1e-4:
+                siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
+                cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+                self.target_yaw = math.atan2(siny_cosp, cosy_cosp)
 
     def setpoint_vel_cb(self, msg: Vector3Stamped):
         if self.control_mode == "AUTONOMOUS":
