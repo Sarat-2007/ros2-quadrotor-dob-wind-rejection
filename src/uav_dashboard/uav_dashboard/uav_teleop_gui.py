@@ -230,27 +230,50 @@ class OfficialGcsDashboard:
                                         font=('Helvetica', 9, 'bold'), relief='flat', padx=8, command=self.toggle_dob)
         self.btn_dob_toggle.pack(side=tk.RIGHT)
 
-        c2 = tk.Frame(ctrl_box, bg='#242933')
-        c2.pack(fill=tk.X, pady=(6, 2))
-        tk.Label(c2, text="Simulated Wind Velocity:", bg='#242933', fg='#8b949e', font=('Helvetica', 9)).pack(side=tk.LEFT)
-        self.lbl_wind_val = tk.Label(c2, text="0.0 m/s", bg='#242933', fg='#58a6ff', font=('Helvetica', 9, 'bold'))
+        # Dynamic Gust Velocity Setting & Real-Time Aerodynamic Calculator
+        c_gust_lbl = tk.Frame(ctrl_box, bg='#242933')
+        c_gust_lbl.pack(fill=tk.X, pady=(8, 2))
+        tk.Label(c_gust_lbl, text="Shock Gust Velocity (v):", bg='#242933', fg='#8b949e', font=('Helvetica', 9)).pack(side=tk.LEFT)
+        self.lbl_gust_val = tk.Label(c_gust_lbl, text="8.0 m/s", bg='#242933', fg='#58a6ff', font=('Helvetica', 9, 'bold'))
+        self.lbl_gust_val.pack(side=tk.RIGHT)
+
+        c_gust_slide = tk.Frame(ctrl_box, bg='#242933')
+        c_gust_slide.pack(fill=tk.X, pady=2)
+        self.scale_gust = ttk.Scale(c_gust_slide, from_=1.0, to=12.0, value=8.0, command=self.on_gust_slide)
+        self.scale_gust.pack(fill=tk.X)
+
+        # Real-Time Calculated Physics Display
+        c_calc = tk.Frame(ctrl_box, bg='#1a1d24', padx=8, pady=5)
+        c_calc.pack(fill=tk.X, pady=4)
+        self.lbl_calc_drag = tk.Label(c_calc, text="Fluid Drag Force (Fd = ½ρCdAv²): 9.92 N", bg='#1a1d24', fg='#58a6ff', font=('Helvetica', 8, 'bold'))
+        self.lbl_calc_drag.pack(anchor=tk.W)
+        self.lbl_calc_tilt = tk.Label(c_calc, text="Req. Counter-Tilt: 35.1° | Collective Thrust: 18.01 N", bg='#1a1d24', fg='#8b949e', font=('Helvetica', 8))
+        self.lbl_calc_tilt.pack(anchor=tk.W)
+
+        # Inject Button with Real-Time Values
+        self.btn_inject_gust = tk.Button(ctrl_box, text="⚡ INJECT 8.0 m/s GUST (Exp. Force: 9.92 N)", bg='#30363d', fg='#ffffff',
+                                         font=('Helvetica', 9, 'bold'), relief='flat', pady=4, command=self.do_trigger_gust)
+        self.btn_inject_gust.pack(fill=tk.X, pady=(2, 4))
+
+        # Quick Shock Gust Presets
+        c_presets = tk.Frame(ctrl_box, bg='#242933')
+        c_presets.pack(fill=tk.X, pady=(2, 4))
+        tk.Label(c_presets, text="Quick Presets:", bg='#242933', fg='#8b949e', font=('Helvetica', 8)).pack(side=tk.LEFT)
+        for g_val in [4.0, 6.0, 8.0, 10.0]:
+            tk.Button(c_presets, text=f"{int(g_val)} m/s", bg='#21262d', fg='#e6edf3', font=('Helvetica', 8),
+                      relief='flat', command=lambda v=g_val: self.set_gust_preset(v)).pack(side=tk.LEFT, padx=3)
+
+        # Ambient Continuous Wind Slider
+        c_amb = tk.Frame(ctrl_box, bg='#242933')
+        c_amb.pack(fill=tk.X, pady=(6, 2))
+        tk.Label(c_amb, text="Continuous Ambient Wind:", bg='#242933', fg='#8b949e', font=('Helvetica', 8)).pack(side=tk.LEFT)
+        self.lbl_wind_val = tk.Label(c_amb, text="0.0 m/s", bg='#242933', fg='#8b949e', font=('Helvetica', 8, 'bold'))
         self.lbl_wind_val.pack(side=tk.RIGHT)
 
-        c3 = tk.Frame(ctrl_box, bg='#242933')
-        c3.pack(fill=tk.X, pady=2)
-        self.scale_wind = ttk.Scale(c3, from_=0.0, to=12.0, value=0.0, command=self.on_wind_slide)
-        self.scale_wind.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 6))
-
-        tk.Button(c3, text="Inject Gust (Slider)", bg='#30363d', fg='#e6edf3', font=('Helvetica', 8, 'bold'),
-                  relief='flat', command=self.do_trigger_gust).pack(side=tk.RIGHT)
-
-        # Quick Gust Presets
-        c4 = tk.Frame(ctrl_box, bg='#242933')
-        c4.pack(fill=tk.X, pady=(3, 2))
-        tk.Label(c4, text="Quick Shock Gusts:", bg='#242933', fg='#8b949e', font=('Helvetica', 8)).pack(side=tk.LEFT)
-        for g_val in [4.0, 8.0, 10.0]:
-            tk.Button(c4, text=f"{int(g_val)} m/s", bg='#30363d', fg='#e6edf3', font=('Helvetica', 8),
-                      relief='flat', command=lambda v=g_val: self.do_trigger_custom_gust(v)).pack(side=tk.LEFT, padx=3)
+        c_amb_slide = tk.Frame(ctrl_box, bg='#242933')
+        c_amb_slide.pack(fill=tk.X, pady=2)
+        self.scale_wind = ttk.Scale(c_amb_slide, from_=0.0, to=8.0, value=0.0, command=self.on_wind_slide)
+        self.scale_wind.pack(fill=tk.X)
 
         # 5. Live Telemetry HUD Table
         hud_box = tk.LabelFrame(self.root, text=" Live Flight Telemetry ",
@@ -323,16 +346,35 @@ class OfficialGcsDashboard:
         msg.z = 0.0
         self.ros_node.wind_pub.publish(msg)
 
-    def do_trigger_gust(self):
-        slider_val = self.scale_wind.get()
-        gust_mag = float(slider_val) if slider_val >= 1.0 else 8.0
-        msg = Float32()
-        msg.data = gust_mag
-        self.ros_node.gust_pub.publish(msg)
+    def on_gust_slide(self, _=None):
+        v = self.scale_gust.get()
+        self.lbl_gust_val.config(text=f"{v:.1f} m/s")
+        self.update_gust_calculations(v)
 
-    def do_trigger_custom_gust(self, val):
+    def set_gust_preset(self, val):
+        self.scale_gust.set(val)
+        self.lbl_gust_val.config(text=f"{val:.1f} m/s")
+        self.update_gust_calculations(val)
+
+    def update_gust_calculations(self, v):
+        # Rayleigh Fluid Drag: Fd = 0.5 * rho * Cd * A * v^2
+        # rho = 1.225, Cd = 1.15, Area = 0.22 m^2
+        f_drag = 0.5 * 1.225 * 1.15 * 0.22 * (v ** 2)
+        # Required tilt angle: sin(theta) = F_drag / (m * g)
+        mg = 1.50 * 9.81 # 14.715 N
+        ratio = min(0.7071, f_drag / mg)
+        theta_deg = math.degrees(math.asin(ratio))
+        t_thrust = mg / max(0.5, math.cos(math.radians(theta_deg)))
+
+        # Update real-time calculated labels
+        self.lbl_calc_drag.config(text=f"Fluid Drag Force (Fd = ½ρCdAv²): {f_drag:.2f} N")
+        self.lbl_calc_tilt.config(text=f"Req. Counter-Tilt: {theta_deg:.1f}° | Thrust: {t_thrust:.2f} N")
+        self.btn_inject_gust.config(text=f"⚡ INJECT {v:.1f} m/s GUST (Exp. Force: {f_drag:.2f} N)")
+
+    def do_trigger_gust(self):
+        v = float(self.scale_gust.get())
         msg = Float32()
-        msg.data = float(val)
+        msg.data = v
         self.ros_node.gust_pub.publish(msg)
 
     def toggle_dob(self):
