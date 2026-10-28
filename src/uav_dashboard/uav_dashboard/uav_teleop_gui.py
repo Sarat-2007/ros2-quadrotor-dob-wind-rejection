@@ -98,15 +98,17 @@ class OfficialGcsDashboard:
         self.patrol_target_pos = np.array([0.0, 0.0, 2.0])
         self.patrol_speed = 1.2
         self.patrol_waypoints = [
-            {"name": "Helipad Transit Corridor", "pos": [0.0, 1.5, 2.0], "desc": "Climb out & align with gate entry"},
-            {"name": "Inspection Gate Ingress", "pos": [0.0, 5.2, 2.2], "desc": "Fly through illuminated gate center"},
-            {"name": "East Sector Turn", "pos": [2.2, 4.5, 2.5], "desc": "Clear past Slalom Pylon 1"},
-            {"name": "Rooftop Observation Deck", "pos": [5.0, 0.5, 2.7], "desc": "Overfly elevated rooftop structure"},
-            {"name": "Industrial Tower A Perimeter", "pos": [5.5, -4.0, 2.6], "desc": "Perimeter inspection of Tower A"},
-            {"name": "South Sector Cross-Corridor", "pos": [2.5, -5.8, 2.4], "desc": "Transit between Industrial Towers"},
-            {"name": "Industrial Tower B Perimeter", "pos": [-3.5, -5.5, 2.4], "desc": "Perimeter inspection of Tower B"},
-            {"name": "West Sector Approach", "pos": [-3.5, -1.5, 2.2], "desc": "Fly inbound past Slalom Pylon 3"},
-            {"name": "Helipad Home Recovery", "pos": [0.0, 0.0, 2.0], "desc": "Return to base & lock station hover"}
+            {"name": "Helipad Ascent Corridor", "pos": [0.0, 0.0, 2.2], "desc": "Ascend cleanly from Helipad to 2.2m"},
+            {"name": "Gate Approach Corridor", "pos": [0.0, 3.0, 2.2], "desc": "Straight line alignment towards Gate"},
+            {"name": "Inspection Gate Fly-Through", "pos": [0.0, 6.5, 2.2], "desc": "Pass directly through center of gate"},
+            {"name": "North-East Turn Corridor", "pos": [3.0, 6.5, 2.5], "desc": "Clear north of gate and Pylon 1"},
+            {"name": "East Outer Bypass", "pos": [6.8, 4.5, 3.2], "desc": "Clear east bypass corridor"},
+            {"name": "Rooftop Station Aerial Survey", "pos": [6.0, 0.0, 3.5], "desc": "Survey elevated station 1.5m above roof"},
+            {"name": "South-West Survey Corridor", "pos": [3.0, -2.5, 3.0], "desc": "Safe survey transit clear of Tower A"},
+            {"name": "South Central Transit", "pos": [0.0, -2.2, 2.5], "desc": "Pass north of Pylon 4 in open airspace"},
+            {"name": "Tower B Inspection Corridor", "pos": [-2.8, -2.5, 2.5], "desc": "Safe perimeter sweep east of Tower B"},
+            {"name": "West Return Corridor", "pos": [-2.0, 0.0, 2.2], "desc": "Inbound corridor east of Pylon 3"},
+            {"name": "Helipad Home Recovery", "pos": [0.0, 0.0, 2.0], "desc": "Return to Helipad origin and station hover"}
         ]
 
         self.setup_ui()
@@ -195,11 +197,11 @@ class OfficialGcsDashboard:
         m_status = tk.Frame(mission_box, bg='#1a1d24', padx=8, pady=4)
         m_status.pack(fill=tk.X, pady=(4, 2))
 
-        self.lbl_patrol_status = tk.Label(m_status, text="MISSION STANDBY: Ready to deploy across 9 facility waypoints",
+        self.lbl_patrol_status = tk.Label(m_status, text="MISSION STANDBY: Ready to deploy across 11 facility waypoints",
                                           bg='#1a1d24', fg='#8b949e', font=('Helvetica', 9, 'bold'))
         self.lbl_patrol_status.pack(anchor='w')
 
-        self.lbl_patrol_sub = tk.Label(m_status, text="Route: Helipad → Gate (0,5m) → Rooftop → Tower A → Tower B → Helipad",
+        self.lbl_patrol_sub = tk.Label(m_status, text="Route: Helipad -> Gate (0, 6.5m) -> Bypass -> Rooftop (3.5m) -> Towers -> Helipad",
                                        bg='#1a1d24', fg='#58a6ff', font=('Helvetica', 8))
         self.lbl_patrol_sub.pack(anchor='w')
 
@@ -465,8 +467,8 @@ class OfficialGcsDashboard:
                     d_vec = wp_pos - current_pos
                     dist_to_wp = float(np.linalg.norm(d_vec))
 
-                    # Arrival tolerance: 0.40m
-                    if dist_to_wp < 0.40:
+                    # Arrival tolerance: 0.35m
+                    if dist_to_wp < 0.35:
                         self.patrol_wp_idx += 1
                         if self.patrol_wp_idx >= len(self.patrol_waypoints):
                             # Mission successfully finished!
@@ -477,7 +479,7 @@ class OfficialGcsDashboard:
                             self.ros_node.hover_pub.publish(Empty())
                             self.btn_start_patrol.config(text="🎯 START AUTONOMOUS PATROL\n[Gate & Towers Perimeter Sweep]", bg='#238636')
                             self.lbl_patrol_status.config(text="✅ MISSION COMPLETE: RECOVERED TO BASE HELIPAD", fg='#3fb950')
-                            self.lbl_patrol_sub.config(text="All 9 surveillance waypoints traversed. Holding position at (0, 0, 2m).", fg='#58a6ff')
+                            self.lbl_patrol_sub.config(text="All 11 surveillance waypoints traversed. Holding position at (0, 0, 2m).", fg='#58a6ff')
                             self.root.after(50, self.patrol_stream_loop)
                             return
                         else:

@@ -76,8 +76,8 @@ def run_test():
     assert abs(tester.pos[2] - 2.0) < 0.10, f'Expected Z ~ 2.0m, got {tester.pos[2]}'
     print('  >>> PASS: Quadrotor stabilized at 2.0m hover.')
 
-    # 3. Engage Autonomous Patrol towards Waypoint 1 (Inspection Gate: [0.0, 5.2, 2.2])
-    print('\n[STAGE 3] Engaging Autonomous Patrol -> WP 1 (Inspection Gate [0, 5.2, 2.2])...')
+    # 3. Engage Autonomous Patrol towards Waypoint 1 (Inspection Gate: [0.0, 6.5, 2.2])
+    print('\n[STAGE 3] Engaging Autonomous Patrol -> WP 1 (Inspection Gate Fly-Through [0, 6.5, 2.2])...')
     msg_mode = Int32()
     msg_mode.data = 10
     tester.traj_mode_pub.publish(msg_mode)
@@ -89,7 +89,7 @@ def run_test():
         sp.header.stamp = tester.get_clock().now().to_msg()
         sp.header.frame_id = 'world'
         sp.pose.position.x = 0.0
-        sp.pose.position.y = 5.2
+        sp.pose.position.y = 6.5
         sp.pose.position.z = 2.2
         tester.setpoint_pub.publish(sp)
         spin_for(0.05)
