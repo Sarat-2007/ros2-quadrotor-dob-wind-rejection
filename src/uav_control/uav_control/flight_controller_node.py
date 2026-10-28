@@ -118,6 +118,7 @@ class FlightControllerNode(Node):
         self.joint_traj_counter = 0
         self.flight_path_pub = self.create_publisher(Path, '/uav/flight_path', 10)
         self.status_pub = self.create_publisher(String, '/uav/flight_status', 10)
+        self.dob_status_pub = self.create_publisher(Bool, '/uav/dob_status', 10)
 
         # Subscribers: Teleoperation & Commands (Highest Priority)
         self.cmd_vel_sub = self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_cb, 10)
@@ -552,6 +553,7 @@ class FlightControllerNode(Node):
         est_msg.wrench.force.y = float(self.f_dist_est[1])
         est_msg.wrench.force.z = float(self.f_dist_est[2])
         self.est_dist_pub.publish(est_msg)
+        self.dob_status_pub.publish(Bool(data=self.dob_enabled))
 
         # TF Broadcast: world -> base_footprint
         t = TransformStamped()

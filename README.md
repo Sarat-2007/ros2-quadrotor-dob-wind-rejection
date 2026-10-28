@@ -35,6 +35,17 @@ Under a violent **$8.0\text{ m/s}$ sudden wind gust** generating a **$10.33\text
 | **Altitude Stability** | Drops under tilt | Rock-solid at $Z = 2.03\text{ m}$ | Non-linear tilt thrust |
 | **Touchdown & Disarm** | Manual | Automatic on skids ($Z = 0.12\text{ m}$) | Safe ground contact |
 
+### Multi-Position In-Flight Gust Rejection Benchmark
+
+Comparative 11-waypoint 3D patrol mission under 3 violent orthogonal crosswinds ($7.5 - 8.5\text{ m/s}$):
+
+| Flight Event / Gust Location | Baseline Industrial PID | Active DOB (Ours) | Lateral Drift Reduction |
+| :--- | :---: | :---: | :---: |
+| **Gust 1: Gate Approach ($7.5\text{ m/s}$)** | $86.2\text{ cm}$ | **$12.2\text{ cm}$** | **$85.8\%$ Reduction** |
+| **Gust 2: Rooftop Survey ($8.5\text{ m/s}$)** | $157.1\text{ cm}$ | **$41.9\text{ cm}$** | **$73.3\%$ Reduction** |
+| **Gust 3: Helipad Recovery ($8.0\text{ m/s}$)** | $84.7\text{ cm}$ | **$29.9\text{ cm}$** | **$64.7\%$ Reduction** |
+| **Overall Mean Cross-Track Error** | $32.9\text{ cm}$ | **$20.2\text{ cm}$** | **$38.7\%$ Improvement** |
+
 ---
 
 ## Mathematical & Control Foundations
