@@ -21,6 +21,7 @@ os.makedirs(reports_dir, exist_ok=True)
 report_files = [
     "UAV_Disturbance_Observer_Project_Report.docx",
     "UAV_Disturbance_Observer_Project_Report.pdf",
+    "UAV_Disturbance_Observer_Slidesgo_Presentation.pptx",
     "UAV_Disturbance_Observer_New_Template.pptx",
     "UAV_Disturbance_Observer_Project_Presentation.pptx",
     "academic_project_report.md",
@@ -35,6 +36,8 @@ for rf in report_files:
 # Also copy docx, pdf and pptx to root of package for quick access
 shutil.copy2(os.path.join(BASE_DIR, "UAV_Disturbance_Observer_Project_Report.docx"), PKG_DIR)
 shutil.copy2(os.path.join(BASE_DIR, "UAV_Disturbance_Observer_Project_Report.pdf"), PKG_DIR)
+if os.path.exists(os.path.join(BASE_DIR, "UAV_Disturbance_Observer_Slidesgo_Presentation.pptx")):
+    shutil.copy2(os.path.join(BASE_DIR, "UAV_Disturbance_Observer_Slidesgo_Presentation.pptx"), PKG_DIR)
 if os.path.exists(os.path.join(BASE_DIR, "UAV_Disturbance_Observer_New_Template.pptx")):
     shutil.copy2(os.path.join(BASE_DIR, "UAV_Disturbance_Observer_New_Template.pptx"), PKG_DIR)
 if os.path.exists(os.path.join(BASE_DIR, "UAV_Disturbance_Observer_Project_Presentation.pptx")):
