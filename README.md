@@ -9,14 +9,49 @@ An industrial-grade, 6-DOF quadrotor unmanned aerial vehicle (UAV) flight dynami
 
 ---
 
+## 📄 Academic Project Reports & Technical Documentation
+
+For faculty evaluation, research review, and publication presentation, the complete technical documentation is available in both Word and PDF formats:
+
+- 📘 **Official Project Report (Word .docx)**: [`UAV_Disturbance_Observer_Project_Report.docx`](UAV_Disturbance_Observer_Project_Report.docx) *(Full mathematical formulations, obstacle clearance tables, oral defense guide, and high-res embedded figures)*
+- 📕 **Official Project Report (Adobe PDF)**: [`UAV_Disturbance_Observer_Project_Report.pdf`](UAV_Disturbance_Observer_Project_Report.pdf) *(Publication-ready report with complete proofs and simulation telemetry)*
+- 📑 **Markdown Documentation**: [`academic_project_report.md`](academic_project_report.md) & [`COMPLETE_PROJECT_DOCUMENTATION.md`](COMPLETE_PROJECT_DOCUMENTATION.md)
+- 🧭 **Operator User Guide**: [`USER_GUIDE.md`](USER_GUIDE.md)
+
+---
+
+## 📸 Simulation Visuals & Architecture Overview
+
+<p align="center">
+  <img src="docs/images/gazebo_3d_simulation_arena.png" width="85%" alt="3D Gazebo Simulation Arena" />
+  <br><em>Figure 1: High-Fidelity 3D Simulation Arena in Gazebo 11, featuring 6 industrial obstacle structures, 11-waypoint Collision-Free Autonomous Patrol Corridor, and 3 orthogonal shock crosswind injection zones.</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/control_system_architecture.png" width="85%" alt="Disturbance Observer Flight Control Architecture" />
+  <br><em>Figure 2: Two-Time-Scale Decoupled Flight Control Architecture: Outer-loop position tracking (100 Hz), Disturbance Observer filter (ω_obs = 35.0 rad/s), acceleration feedforward decoupling, and inner-loop SO(3) attitude allocation.</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/multi_gust_dob_vs_pid.png" width="85%" alt="Multi-Position Wind Gust Benchmark: DOB vs PID" />
+  <br><em>Figure 3: Empirical Multi-Position Wind Gust Benchmark across Gate, Rooftop Station, and Helipad Recovery corridors (DOB vs Baseline PID).</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/gcs_teleop_dashboard.png" width="60%" alt="Official UAV Ground Control Station (GCS) Dashboard" />
+  <br><em>Figure 4: Industrial Ground Control Station (GCS) Dashboard in Dark Slate UI (#1a1d24), showing live mission telemetry, dynamic aerodynamic drag calculator, and flight controls.</em>
+</p>
+
+---
+
 ## Key Features
 
 - **Non-Linear 6-DOF Rigid-Body Dynamics**: 500 Hz sub-stepped numerical integration ensuring unconditional numerical stability across high-agility maneuvers.
 - **Active Disturbance Rejection Control (DOB / ADRC)**: High-bandwidth ($\omega_{obs} = 35\text{ rad/s}$) disturbance observer estimating fluid drag and wind gusts in real time, injecting dynamic feedforward counter-thrust.
-- **73.3% Gust Drift Reduction**: Rigorously benchmarked against standard industrial PID controllers under violent $8.0\text{ m/s}$ ($10.33\text{ N}$) sudden wind gusts.
+- **Up to 85.8% Gust Drift Reduction**: Rigorously benchmarked against standard industrial PID controllers across 3 in-flight shock gusts ($7.5 - 8.5\text{ m/s}$).
 - **Rayleigh Fluid Aerodynamics**: Quadratic aerodynamic drag ($F_d = -\frac{1}{2}\rho C_d A |v_{rel}| v_{rel}$) coupled with 1-cosine gust profiles and Dryden-like stochastic atmospheric turbulence.
 - **High-Fidelity 3D Drone Model**: Modular URDF/Xacro model featuring central carbon-fiber plates, landing skids, brushless motors, continuous rotating joints with ODE physics limits, and active motor disarm upon landing.
-- **Autonomous Surveillance Patrol Mission**: 1-Click autonomous mission traversing a 9-waypoint perimeter inspection route across the 3D obstacle arena (flying through the illuminated Inspection Gate at $(0, 5\text{ m})$, surveying the Elevated Rooftop Station, inspecting Industrial Towers A & B, and precision landing back on the Helipad).
+- **11-Waypoint Collision-Free Autonomous Patrol Corridor**: 1-Click autonomous mission traversing an 11-waypoint perimeter inspection route across the 3D obstacle arena (flying through the illuminated Inspection Gate at $(0, 5\text{ m})$, surveying the Elevated Rooftop Station at $Z = 3.5\text{ m}$, inspecting Industrial Towers A & B, and precision landing back on the Helipad).
 - **Fail-Safe Pilot Override & Emergency Abort**: Instant station hover locking and priority hand-off to manual flight sticks upon clicking "🛑 ABORT PATROL" or touching any pilot flight control.
 - **Industrial Ground Control Station (GCS)**: Aerospace-grade dark slate UI (`#1a1d24`) providing uninterrupted pilot stick teleoperation, dynamic aerodynamic fluid drag calculator, live flight status, DOB mode toggling, and 1-click $8\text{ m/s}$ gust triggers.
 - **Fully Automated Verification Suite**: Headless and visual test suite validating the 6-stage flight lifecycle, disturbance estimation, and empirical PID comparison.
@@ -200,7 +235,7 @@ source install/setup.bash
 
 | Control | Action | Autopilot Behavior |
 | :--- | :--- | :--- |
-| **🎯 START AUTONOMOUS PATROL** | Click | Initiates automatic takeoff climb (if landed) and autonomous traversal of 9 facility waypoints across the 3D obstacle arena |
+| **🎯 START AUTONOMOUS PATROL** | Click | Initiates automatic takeoff climb (if landed) and autonomous traversal of 11 facility waypoints across the 3D obstacle arena |
 | **🛑 ABORT PATROL MISSION** | Click | Instant emergency override; halts trajectory, cancels mission, and locks drone into rock-solid station hover |
 | **TAKEOFF** | Click | Propellers spin up, climbs smoothly to $2.0\text{ m}$, settles into `HOVER` |
 | **FORWARD ($\mathbf{\Delta}$)** | **Click & Hold** | Continuous forward motion ($+1.2\text{ m/s}$); brakes to hover upon release |
