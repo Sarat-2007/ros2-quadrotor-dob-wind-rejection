@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pptx import Presentation
-prs = Presentation("/mnt/d/ROS/UAV_Disturbance_Observer_Presentation.pptx")
+prs = Presentation("/mnt/d/ROS/UAV_Disturbance_Observer_Project_Presentation.pptx")
 print(f"Total Slides: {len(prs.slides)}")
 for i, slide in enumerate(prs.slides):
     texts = []

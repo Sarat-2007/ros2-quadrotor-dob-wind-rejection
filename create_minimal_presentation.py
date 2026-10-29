@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
 create_minimal_presentation.py
-Generates a minimal, clean, professional academic PowerPoint presentation (.pptx)
-Key design principles:
-- No crazy templates or garish colors (clean white background, deep navy & slate).
-- Real simulation figures embedded with strict aspect-ratio fitting and centering (NO stretching).
-- Calibrated layout geometry eliminating any overlapping text, cards, or images.
-- Consistent typography and margins across all 8 slides.
+Minimal, High-Impact Academic Presentation
+- Eliminates unnecessary clutter and wall-of-text bullets.
+- Fixes excessive empty space by scaling typography (14pt body, 16-18pt headers, 26pt titles)
+  and significantly enlarging real simulation figures to fill slides naturally.
+- Zero awkward gaps, zero overlapping elements.
 """
 
 import os
@@ -21,21 +20,19 @@ from pptx.enum.shapes import MSO_SHAPE
 PPTX_PATH = "/mnt/d/ROS/UAV_Disturbance_Observer_Presentation.pptx"
 IMG_DIR = "/mnt/d/ROS/docs/images"
 
-# --- REFINED ACADEMIC COLOR PALETTE ---
-COLOR_BG = RGBColor(255, 255, 255)         # Pure White
-COLOR_NAVY = RGBColor(30, 41, 59)          # Deep Slate/Navy (#1E293B)
-COLOR_STEEL = RGBColor(71, 85, 105)        # Muted Slate (#475569)
-COLOR_TEXT = RGBColor(51, 65, 85)          # Charcoal (#334155)
-COLOR_MUTED = RGBColor(148, 163, 184)      # Subdued Grey (#94A3B8)
-COLOR_CARD_BG = RGBColor(248, 250, 252)    # Clean Slate Fill (#F8FAFC)
-COLOR_CARD_BORDER = RGBColor(226, 232, 240)# Clean Slate Border (#E2E8F0)
-COLOR_HIGHLIGHT = RGBColor(15, 118, 110)   # Deep Teal Accent (#0F766E)
+# --- CLEAN ACADEMIC PALETTE ---
+COLOR_NAVY = RGBColor(15, 30, 55)          # Deep Classic Navy (#0F1E37)
+COLOR_STEEL = RGBColor(60, 75, 95)         # Professional Slate (#3C4B5F)
+COLOR_TEXT = RGBColor(35, 40, 50)          # Readable Dark Charcoal (#232832)
+COLOR_MUTED = RGBColor(130, 140, 155)      # Subdued Footer Grey (#828C9B)
+COLOR_CARD_BG = RGBColor(246, 248, 251)    # Crisp Soft Card Background (#F6F8FB)
+COLOR_CARD_BORDER = RGBColor(220, 226, 235)# Clean Light Border (#DCE2EB)
+COLOR_ACCENT = RGBColor(16, 120, 70)       # Deep Forest Green for results (#107846)
 
 def add_fitted_picture(slide, img_path, box_left, box_top, box_w, box_h):
-    """Calculates aspect ratio, fits image inside bounding box without distortion, and centers it."""
+    """Fits image inside bounding box preserving natural ratio, perfectly centered."""
     if not os.path.exists(img_path):
         return None
-    
     with Image.open(img_path) as im:
         im_w, im_h = im.size
         im_ratio = im_w / im_h
@@ -43,30 +40,27 @@ def add_fitted_picture(slide, img_path, box_left, box_top, box_w, box_h):
     box_ratio = box_w / box_h
 
     if im_ratio > box_ratio:
-        # Image is wider than box -> constrain by width
         fit_w = box_w
         fit_h = box_w / im_ratio
     else:
-        # Image is taller than box -> constrain by height
         fit_h = box_h
         fit_w = box_h * im_ratio
 
-    # Center inside the box
     offset_x = box_left + (box_w - fit_w) / 2.0
     offset_y = box_top + (box_h - fit_h) / 2.0
 
-    # Add subtle border container around the image for clean finish
+    # Clean subtle background container
     border_rect = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE, 
-        Inches(offset_x - 0.04), Inches(offset_y - 0.04), 
-        Inches(fit_w + 0.08), Inches(fit_h + 0.08)
+        Inches(offset_x - 0.03), Inches(offset_y - 0.03), 
+        Inches(fit_w + 0.06), Inches(fit_h + 0.06)
     )
     border_rect.fill.solid()
     border_rect.fill.fore_color.rgb = COLOR_CARD_BG
     border_rect.line.color.rgb = COLOR_CARD_BORDER
     border_rect.line.width = Pt(1.0)
 
-    # Insert picture
+    # Insert Picture
     pic = slide.shapes.add_picture(
         img_path, 
         Inches(offset_x), Inches(offset_y), 
@@ -80,62 +74,60 @@ def create_deck():
     prs.slide_height = Inches(7.5)
     blank_layout = prs.slide_layouts[6]
 
-    def add_base_slide(title_text, category_tag="UAV AUTONOMOUS FLIGHT & ROBUST CONTROL"):
+    def add_base_slide(title_text, category_tag):
         slide = prs.slides.add_slide(blank_layout)
         
-        # Subtle header category tag
-        tag_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.4), Inches(11.733), Inches(0.25))
+        # Category tag
+        tag_box = slide.shapes.add_textbox(Inches(0.7), Inches(0.35), Inches(11.9), Inches(0.25))
         tf_tag = tag_box.text_frame
         tf_tag.word_wrap = True
         tf_tag.margin_left = tf_tag.margin_top = tf_tag.margin_right = tf_tag.margin_bottom = 0
         p_tag = tf_tag.paragraphs[0]
         p_tag.text = category_tag.upper()
         p_tag.font.name = "Arial"
-        p_tag.font.size = Pt(9.0)
+        p_tag.font.size = Pt(10)
         p_tag.font.bold = True
         p_tag.font.color.rgb = COLOR_STEEL
 
-        # Main slide title
-        title_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.68), Inches(11.733), Inches(0.55))
+        # Main slide title (larger, authoritative)
+        title_box = slide.shapes.add_textbox(Inches(0.7), Inches(0.62), Inches(11.9), Inches(0.6))
         tf_title = title_box.text_frame
         tf_title.word_wrap = True
         tf_title.margin_left = tf_title.margin_top = tf_title.margin_right = tf_title.margin_bottom = 0
         p_title = tf_title.paragraphs[0]
         p_title.text = title_text
         p_title.font.name = "Arial"
-        p_title.font.size = Pt(20)
+        p_title.font.size = Pt(22)
         p_title.font.bold = True
         p_title.font.color.rgb = COLOR_NAVY
 
-        # Subtle divider rule
-        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.30), Inches(11.733), Inches(0.015))
+        # Subtle divider
+        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.7), Inches(1.25), Inches(11.933), Inches(0.015))
         line.fill.solid()
         line.fill.fore_color.rgb = COLOR_CARD_BORDER
         line.line.color.rgb = COLOR_CARD_BORDER
 
         # Footer
-        footer_box = slide.shapes.add_textbox(Inches(0.8), Inches(7.05), Inches(11.733), Inches(0.25))
+        footer_box = slide.shapes.add_textbox(Inches(0.7), Inches(7.1), Inches(11.9), Inches(0.25))
         tf_foot = footer_box.text_frame
         tf_foot.word_wrap = True
         tf_foot.margin_left = tf_foot.margin_top = tf_foot.margin_right = tf_foot.margin_bottom = 0
         p_foot = tf_foot.paragraphs[0]
-        p_foot.text = "Autonomous Aerial Robotics Research Laboratory  |  ROS 2 Humble & Gazebo 11  |  github.com/Sarat-2007/ros2-quadrotor-dob-wind-rejection"
+        p_foot.text = "UAV Disturbance Observer Flight Control  |  ROS 2 Humble & Gazebo 11  |  github.com/Sarat-2007/ros2-quadrotor-dob-wind-rejection"
         p_foot.font.name = "Calibri"
-        p_foot.font.size = Pt(8.5)
+        p_foot.font.size = Pt(9.0)
         p_foot.font.color.rgb = COLOR_MUTED
 
         return slide
 
-    def add_card(slide, left, top, width, height, title, items, badge=""):
-        # Card background
+    def add_card(slide, left, top, width, height, title, items):
         rect = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height))
         rect.fill.solid()
         rect.fill.fore_color.rgb = COLOR_CARD_BG
         rect.line.color.rgb = COLOR_CARD_BORDER
         rect.line.width = Pt(1.0)
 
-        # Card text content
-        tb = slide.shapes.add_textbox(Inches(left + 0.25), Inches(top + 0.22), Inches(width - 0.5), Inches(height - 0.44))
+        tb = slide.shapes.add_textbox(Inches(left + 0.3), Inches(top + 0.3), Inches(width - 0.6), Inches(height - 0.6))
         tf = tb.text_frame
         tf.word_wrap = True
         tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
@@ -143,16 +135,16 @@ def create_deck():
         p0 = tf.paragraphs[0]
         p0.text = title
         p0.font.name = "Arial"
-        p0.font.size = Pt(12.5)
+        p0.font.size = Pt(15)
         p0.font.bold = True
         p0.font.color.rgb = COLOR_NAVY
-        p0.space_after = Pt(8)
+        p0.space_after = Pt(12)
 
         for item in items:
             p = tf.add_paragraph()
-            p.space_after = Pt(5)
+            p.space_after = Pt(10)
             p.font.name = "Calibri"
-            p.font.size = Pt(10.5)
+            p.font.size = Pt(13)
             p.font.color.rgb = COLOR_TEXT
             if isinstance(item, tuple):
                 bold_prefix, text_body = item
@@ -167,17 +159,17 @@ def create_deck():
                 r.text = item
 
     # -------------------------------------------------------------
-    # SLIDE 1: TITLE SLIDE (Clean, Minimal, Modern)
+    # SLIDE 1: TITLE SLIDE (Balanced, Roomy, Clean)
     # -------------------------------------------------------------
     s1 = prs.slides.add_slide(blank_layout)
     
-    # Left accent indicator
-    bar = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(1.0), Inches(2.0), Inches(0.06), Inches(3.2))
+    # Left accent vertical band
+    bar = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(1.2), Inches(1.8), Inches(0.08), Inches(3.8))
     bar.fill.solid()
     bar.fill.fore_color.rgb = COLOR_NAVY
     bar.line.fill.background()
 
-    tb_t = s1.shapes.add_textbox(Inches(1.25), Inches(1.9), Inches(11.0), Inches(3.4))
+    tb_t = s1.shapes.add_textbox(Inches(1.5), Inches(1.7), Inches(10.5), Inches(4.0))
     tf_t = tb_t.text_frame
     tf_t.word_wrap = True
     tf_t.margin_left = tf_t.margin_top = tf_t.margin_right = tf_t.margin_bottom = 0
@@ -185,164 +177,147 @@ def create_deck():
     p_proj = tf_t.paragraphs[0]
     p_proj.text = "RESEARCH & TECHNICAL EVALUATION PRESENTATION"
     p_proj.font.name = "Arial"
-    p_proj.font.size = Pt(10)
+    p_proj.font.size = Pt(11)
     p_proj.font.bold = True
     p_proj.font.color.rgb = COLOR_STEEL
-    p_proj.space_after = Pt(12)
+    p_proj.space_after = Pt(14)
 
     p_title = tf_t.add_paragraph()
-    p_title.text = "Nonlinear Disturbance Observer (DOB) for Autonomous Quadrotors Under Severe Aerodynamic Wind Shocks"
+    p_title.text = "Nonlinear Disturbance Observer (DOB) for Autonomous Quadrotors Under Violent Wind Gusts"
     p_title.font.name = "Arial"
-    p_title.font.size = Pt(23)
+    p_title.font.size = Pt(26)
     p_title.font.bold = True
     p_title.font.color.rgb = COLOR_NAVY
-    p_title.space_after = Pt(10)
+    p_title.space_after = Pt(14)
 
     p_sub = tf_t.add_paragraph()
-    p_sub.text = "High-Fidelity ROS 2 Humble & Gazebo 11 Physics Simulation, Differential Flatness Allocation, and Empirical Benchmark"
+    p_sub.text = "Active Disturbance Rejection Control (ADRC), 6-DOF Rayleigh Aerodynamics, and Gazebo 11 Physics Benchmark"
     p_sub.font.name = "Calibri"
-    p_sub.font.size = Pt(13)
+    p_sub.font.size = Pt(15)
     p_sub.font.color.rgb = COLOR_STEEL
-    p_sub.space_after = Pt(26)
+    p_sub.space_after = Pt(32)
 
     p_meta = tf_t.add_paragraph()
-    p_meta.text = "Author: Nallabati Venkata Durga Sai Sarat Chandra  |  Department of Robotics & Autonomous Systems\nTarget Repository: github.com/Sarat-2007/ros2-quadrotor-dob-wind-rejection (Branch: main)"
+    p_meta.text = "Author: Nallabati Venkata Durga Sai Sarat Chandra  |  Department of Robotics & Autonomous Systems\nRepository: github.com/Sarat-2007/ros2-quadrotor-dob-wind-rejection  |  Branch: main"
     p_meta.font.name = "Calibri"
-    p_meta.font.size = Pt(10.5)
+    p_meta.font.size = Pt(12)
     p_meta.font.color.rgb = COLOR_TEXT
 
     # -------------------------------------------------------------
-    # SLIDE 2: THE PROBLEM - WHY CLASSICAL PID FAILS IN WIND
+    # SLIDE 2: THE PROBLEM - WHY PID FAILS IN REAL WIND
     # -------------------------------------------------------------
-    s2 = add_base_slide("Problem Statement: Aerodynamic Wind Shocks vs. Classical PID", "Control Limitation Analysis")
+    s2 = add_base_slide("The Aerodynamic Problem: Why Classical PID Fails in Crosswinds", "Motivation & Problem Statement")
 
-    items_flaws = [
-        ("The Inspection Challenge:", "UAVs conducting facility perimeter patrol maneuver within 1-2 meters of buildings, inspection gates, and transmission towers."),
-        ("Rayleigh Fluid Drag:", "An 8.5 m/s shock crosswind exerts ~11.2 N on a 1.52 kg quadrotor—representing 75.1% of entire vehicle weight."),
-        ("PID Error-Driven Lag:", "PID controllers only react after error has accumulated. Under shock winds, position drift exceeds 1.5 meters."),
-        ("The Integral Windup Dilemma:", "Integral terms slowly wind up over seconds. Once wind ceases, accumulated energy causes massive overshoot into obstacles."),
-        ("Actuator Saturation Risk:", "Increasing high PID gains amplifies sensor noise, causing motor chattering and rapid instability.")
+    items_pid = [
+        ("Violent Aerodynamic Drag:", "An 8.5 m/s crosswind exerts 11.2 N on a 1.52 kg drone—75% of total vehicle weight!"),
+        ("Severe Reaction Delay:", "PID cannot act until large position and velocity tracking errors have already accumulated."),
+        ("Dangerous Integral Windup:", "Integrator slowly winds up over seconds. When the wind stops, accumulated energy flings drone into obstacles."),
+        ("Actuator Saturation & Noise:", "Pumping derivative gains amplifies IMU sensor noise, causing motor chattering and instability.")
     ]
-    add_card(s2, 0.8, 1.5, 5.7, 5.2, "Classical PID Failure Modes", items_flaws)
+    add_card(s2, 0.7, 1.45, 5.8, 5.4, "Conventional Autopilot Failure Modes", items_pid)
 
-    items_real = [
-        ("Peak Crosswind Velocity:", "8.5 m/s Shock Step Injections in Gazebo 11 physics."),
-        ("Baseline PID Drift:", "157.1 cm lateral displacement (Near-miss crash hazard)."),
-        ("DOB Rejection Drift:", "41.9 cm maximum displacement (73.3% drift reduction)."),
-        ("Observer Reaction Time:", "28.5 milliseconds (vs. 2.4 - 4.0 seconds for PID integrator)."),
-        ("Altitude Loss Under Tilt:", "0 cm drop (Nonlinear tilt thrust compensation maintains Z)."),
-        ("Collision Record:", "Zero obstacle collisions across all 11 facility waypoints.")
+    items_target = [
+        ("Immediate Disturbance Rejection:", "Reconstruct unmodeled fluid drag in 28.5 ms (ω_obs = 35 rad/s) before drift starts."),
+        ("Feedforward Decoupling:", "Directly subtract estimated aerodynamic force in acceleration space: a_des = a_PID - (1/m) F_hat."),
+        ("Nonlinear Tilt Thrust:", "Scale thrust by 1 / (cos φ · cos θ) so the drone never loses altitude when leaning up to 37°."),
+        ("Strict Collision-Free Guarantee:", "Maintain ≥ 0.82 m clearance past all gates, rooftops, and towers under shock winds.")
     ]
-    add_card(s2, 6.8, 1.5, 5.7, 5.2, "Target Specifications & Comparative Metrics", items_real)
+    add_card(s2, 6.8, 1.45, 5.8, 5.4, "Our Active Disturbance Rejection Goals", items_target)
 
     # -------------------------------------------------------------
-    # SLIDE 3: DISTURBANCE OBSERVER ARCHITECTURE & THEORY
+    # SLIDE 3: DISTURBANCE OBSERVER ARCHITECTURE & FORMULATIONS
     # -------------------------------------------------------------
     s3 = add_base_slide("Control Architecture: Two-Time-Scale Disturbance Observer", "Robust Control Theory")
 
     items_theory = [
-        ("Observer State Filter:", "dF_hat/dt = ω_obs · (F_meas - F_hat), with bandwidth ω_obs = 35.0 rad/s."),
-        ("Feedforward Decoupling:", "a_des = a_ref + K_p e_p + K_i ∫e_p + K_d e_v - (1/m) F_hat. Direct acceleration cancellation."),
-        ("Nonlinear Tilt Thrust:", "T = (m · a_z,des) / (cos φ · cos θ). Prevents altitude drop when tilting up to 37° into wind."),
-        ("Differential Flatness:", "Maps desired accelerations into SO(3) attitude angles (φ_des, θ_des) for the inner-loop rate controller."),
-        ("Lyapunov Proof:", "Proves exponential convergence of disturbance estimation error: ||e_obs(t)|| → 0 as t → ∞.")
+        ("Observer State Filter:", "dF_hat/dt = ω_obs · (F_meas - F_hat) with bandwidth ω_obs = 35.0 rad/s (τ = 28.5 ms)."),
+        ("Feedforward Acceleration:", "a_des = a_ref + K_p e_p + K_i ∫e_p + K_d e_v - (1/m) F_hat. Instantly cancels drag force."),
+        ("Nonlinear Tilt Compensation:", "T = (m · a_z,des) / (cos φ · cos θ). Boosts thrust from 14.9 N to 18.2 N to counter gravity during tilt."),
+        ("Lyapunov Asymptotic Stability:", "Proven exponential convergence: error ||e_obs(t)|| → 0 as t → ∞ under bounded gust rates.")
     ]
-    add_card(s3, 0.8, 1.5, 5.3, 5.2, "Mathematical Formulations", items_theory)
+    add_card(s3, 0.7, 1.45, 5.4, 5.4, "Mathematical Formulation", items_theory)
 
-    # Fit Real Architecture Image (16:9 ratio)
-    add_fitted_picture(s3, os.path.join(IMG_DIR, "control_system_architecture.png"), 6.4, 1.5, 6.1, 5.2)
+    # Large real architecture figure (fills right side)
+    add_fitted_picture(s3, os.path.join(IMG_DIR, "control_system_architecture.png"), 6.3, 1.45, 6.3, 5.4)
 
     # -------------------------------------------------------------
-    # SLIDE 4: 3D GAZEBO ARENA & 11-WAYPOINT OBSTACLE CORRIDOR
+    # SLIDE 4: 3D GAZEBO SIMULATION WORLD & OBSTACLES
     # -------------------------------------------------------------
-    s4 = add_base_slide("3D Gazebo Simulation Arena & 11-Waypoint Flight Corridor", "Facility Environment Modeling")
+    s4 = add_base_slide("3D Simulation Arena & 11-Waypoint Autonomous Patrol Corridor", "Facility Environment Modeling")
 
     items_arena = [
-        ("6 Realistic Obstacles:", "Central Helipad (Origin), 4m Inspection Gate, 2m Elevated Rooftop Station, Towers A & B, Slalom Pylons."),
-        ("11-Waypoint Corridor:", "Designed with verified clearances (≥ 0.82 m - 2.10 m from prop tip to any physical surface)."),
-        ("Inspection Gate Transit:", "Flies through center (W=3.2m, H=4m) to Y=6.5m before turning, eliminating pillar clipping."),
-        ("Rooftop Station Survey:", "Surveys elevated target at Z=3.5m (1.5m above roof surface) under active crosswinds."),
-        ("Multi-Zone Gust Points:", "Shock gusts injected at Gate Approach (7.5 m/s), Rooftop (8.5 m/s), and Helipad Recovery (8.0 m/s).")
+        ("6 Authentic Obstacles:", "Central Helipad (Origin), 4m Inspection Gate, 2m Elevated Rooftop Station, Towers A & B, Slalom Pylons."),
+        ("Verified Safety Corridors:", "Every waypoint engineered with clearances ≥ 0.82 m - 2.10 m from prop tip to any obstacle surface."),
+        ("Inspection Gate Fly-Through:", "Passes directly through gate arch (W=3.2m, H=4m) to Y=6.5m before turning, eliminating pillar collisions."),
+        ("Rooftop Station Survey:", "Surveys elevated station at Z=3.5m (1.5m above roof) while actively rejecting 8.5 m/s crosswind shock.")
     ]
-    add_card(s4, 0.8, 1.5, 5.3, 5.2, "Safety Envelope & Waypoints", items_arena)
+    add_card(s4, 0.7, 1.45, 5.2, 5.4, "Corridor Clearances", items_arena)
 
-    # Fit Real 3D Arena Image (4:3 ratio)
-    add_fitted_picture(s4, os.path.join(IMG_DIR, "gazebo_3d_simulation_arena.png"), 6.4, 1.5, 6.1, 5.2)
+    # Large 3D arena render (fills right side)
+    add_fitted_picture(s4, os.path.join(IMG_DIR, "gazebo_3d_simulation_arena.png"), 6.1, 1.45, 6.5, 5.4)
 
     # -------------------------------------------------------------
-    # SLIDE 5: EMPIRICAL MULTI-GUST BENCHMARK RESULTS
+    # SLIDE 5: EMPIRICAL BENCHMARK - PID VS DOB
     # -------------------------------------------------------------
-    s5 = add_base_slide("Empirical Results: Multi-Position Wind Gust Benchmark", "Quantitative Performance Verification")
+    s5 = add_base_slide("Empirical Verification: Multi-Position Wind Gust Benchmark", "Quantitative Performance Results")
 
     items_res = [
-        ("Gust 1 (Gate, 7.5 m/s):", "PID Drift = 86.2 cm  vs.  DOB Drift = 12.2 cm  (85.8% Reduction). Prevents gate pillar collision."),
-        ("Gust 2 (Rooftop, 8.5 m/s):", "PID Drift = 157.1 cm  vs.  DOB Drift = 41.9 cm  (73.3% Reduction). Prevents vehicle roof blowout."),
-        ("Gust 3 (Helipad, 8.0 m/s):", "PID Drift = 84.7 cm  vs.  DOB Drift = 29.9 cm  (64.7% Reduction). Guarantees 1.2m pad touchdown."),
-        ("Overall Cross-Track Error:", "Reduced from 32.9 cm to 20.2 cm across the entire 11-waypoint patrol (38.7% overall improvement)."),
-        ("Actuator Demands:", "Smooth motor thrust scaling (14.9 N → 18.2 N) without motor saturation or chattering.")
+        ("Gust 1 (Gate, 7.5 m/s):", "PID Drift = 86.2 cm  →  DOB Drift = 12.2 cm\n85.8% Drift Cut! Prevents pillar collision."),
+        ("Gust 2 (Rooftop, 8.5 m/s):", "PID Drift = 157.1 cm  →  DOB Drift = 41.9 cm\n73.3% Drift Cut! Prevents roof blowout."),
+        ("Gust 3 (Helipad, 8.0 m/s):", "PID Drift = 84.7 cm  →  DOB Drift = 29.9 cm\n64.7% Drift Cut! Ensures 1.2m pad landing."),
+        ("Overall Mean Tracking Error:", "Cut by 38.7% (20.2 cm vs. 32.9 cm across all 11 waypoints) with 0 collisions.")
     ]
-    add_card(s5, 0.8, 1.5, 5.3, 5.2, "Drift Reduction Highlights", items_res)
+    add_card(s5, 0.7, 1.45, 5.3, 5.4, "Benchmark Metrics", items_res)
 
-    # Fit Real Multi-Gust Benchmark Image
-    add_fitted_picture(s5, os.path.join(IMG_DIR, "multi_gust_dob_vs_pid.png"), 6.4, 1.5, 6.1, 5.2)
-
-    # -------------------------------------------------------------
-    # SLIDE 6: OBSERVER FREQUENCY RESPONSE & MOTOR DYNAMICS
-    # -------------------------------------------------------------
-    s6 = add_base_slide("Disturbance Reconstruction & Actuator Dynamics", "Observer Convergence Analysis")
-
-    items_dyn = [
-        ("Observer Bandwidth (35 rad/s):", "Time constant τ = 28.5 ms enables near-instantaneous reconstruction of external aerodynamic drag."),
-        ("Force Estimation Accuracy:", "Reconstructs 10.33 N shock force to 10.34 N (>98% fidelity) in time domain."),
-        ("Separation Principle:", "Bandwidth sits safely between position loop (5 rad/s) and attitude loop (100 rad/s), preventing noise amplification."),
-        ("Tilt Thrust Balancing:", "Collective thrust automatically increases during tilt, ensuring zero altitude drop during 35° leans."),
-        ("Motor PWM Utilization:", "All 4 rotor speeds operate within 1200 - 1800 rad/s, maintaining safe margins from physical saturation.")
-    ]
-    add_card(s6, 0.8, 1.5, 5.3, 5.2, "Transient Dynamics & Bandwidth", items_dyn)
-
-    # Fit Real Experiment Benchmark Image
-    add_fitted_picture(s6, os.path.join(IMG_DIR, "experiment_benchmark_report.png"), 6.4, 1.5, 6.1, 5.2)
+    # Large multi-gust comparison figure (fills right side)
+    add_fitted_picture(s5, os.path.join(IMG_DIR, "multi_gust_dob_vs_pid.png"), 6.2, 1.45, 6.4, 5.4)
 
     # -------------------------------------------------------------
-    # SLIDE 7: GROUND CONTROL STATION & PILOT INTERACTION
+    # SLIDE 6: GROUND CONTROL STATION & PILOT INTERACTION
     # -------------------------------------------------------------
-    s7 = add_base_slide("Ground Control Station (GCS) & Human-in-the-Loop", "Industrial Pilot Dashboard")
+    s6 = add_base_slide("Ground Control Station (GCS) & Human Teleoperation", "Industrial Pilot Dashboard")
 
     items_gcs = [
-        ("Industrial Dark Slate HUD:", "High-contrast telemetry interface showing live 3D coordinates, speed, heading, and disturbance wrench."),
-        ("Aerodynamic Drag Calculator:", "Operator sets gust slider (1-12 m/s); UI computes expected drag (Fd), counter-tilt angle, and required thrust."),
-        ("1-Click Patrol Execution:", "Deploys autonomous inspection sequence across all 11 waypoints with live progress tracking."),
-        ("Emergency Station Hover:", "Instant mission abort halting trajectory tracking and locking drone into zero-drift station hover."),
-        ("Pilot Manual Overrides:", "Touching any keyboard key or D-Pad stick automatically yields mission control to the human pilot.")
+        ("Aerospace Dark Slate HUD:", "Real-time telemetry readouts for 3D position [X,Y,Z], speed, heading, and estimated disturbance drag force."),
+        ("Real-Time Aerodynamic Calculator:", "Dynamically calculates expected fluid drag Fd = ½ρCdAv², required vehicle tilt angle, and required thrust."),
+        ("1-Click Autonomous Patrol Panel:", "Instantly deploys the 11-waypoint facility surveillance mission with active waypoint progression readouts."),
+        ("Instant Station Hover & Override:", "Clicking 'ABORT' or touching any flight stick instantly locks drone into rock-steady zero-drift hover.")
     ]
-    # WIDER card on left (7.6 inches) to balance portrait image on right
-    add_card(s7, 0.8, 1.5, 7.6, 5.2, "Operational Capabilities", items_gcs)
+    # WIDER card on left to balance vertical GCS HUD on right
+    add_card(s6, 0.7, 1.45, 7.5, 5.4, "Operator Capabilities", items_gcs)
 
-    # Portrait GCS Dashboard Image fitted on right
-    add_fitted_picture(s7, os.path.join(IMG_DIR, "gcs_teleop_dashboard.png"), 8.7, 1.5, 3.8, 5.2)
+    # Large portrait GCS HUD (fills vertical height)
+    add_fitted_picture(s6, os.path.join(IMG_DIR, "gcs_teleop_dashboard.png"), 8.5, 1.45, 4.1, 5.4)
 
     # -------------------------------------------------------------
-    # SLIDE 8: SUMMARY & FACULTY EVALUATION TAKEAWAYS
+    # SLIDE 7: SUMMARY & FACULTY DEFENSE TAKEAWAYS
     # -------------------------------------------------------------
-    s8 = add_base_slide("Project Summary & Key Defense Takeaways", "Academic Evaluation Reference")
+    s7 = add_base_slide("Project Summary & Faculty Evaluation Takeaways", "Academic Evaluation Reference")
 
     items_sum_left = [
-        ("Not Just a Waypoint Follower:", "Standard drone projects follow waypoints in calm air. This project introduces Active Disturbance Rejection Control (ADRC) for violent unmodeled wind conditions."),
-        ("Rigorous Mathematical Basis:", "Formulated 6-DOF rigid-body dynamics, Rayleigh fluid drag, and proved Lyapunov asymptotic stability."),
-        ("Exceptional Benchmark Gain:", "Demonstrated 85.8% drift reduction at Gate and 73.3% at Rooftop Station with zero collisions.")
+        ("Not a Basic Waypoint Follower:", "Standard drone projects follow waypoints in calm air. This project pioneers Active Disturbance Rejection Control (ADRC) for violent, unmodeled wind conditions."),
+        ("Theoretical Rigor:", "Complete 6-DOF Newton-Euler dynamics, Rayleigh aerodynamic drag, and mathematically proven Lyapunov asymptotic stability."),
+        ("Empirical Validation:", "Benchmarked in Gazebo 11 physics across 3 shock crosswinds, cutting peak drift by up to 85.8% with zero collisions.")
     ]
-    add_card(s8, 0.8, 1.5, 5.7, 5.2, "Core Technical Novelty", items_sum_left)
+    add_card(s7, 0.7, 1.45, 5.8, 5.4, "Why This Project Stands Out", items_sum_left)
 
     items_sum_right = [
-        ("Modular ROS 2 Architecture:", "Clean separation across uav_control (100 Hz), uav_aerodynamics, uav_dashboard, and uav_description."),
-        ("Reproducible Open Source Suite:", "Automated 1-click test scripts and benchmarks enable instant verification for examiners."),
-        ("Ready for Hardware Transition:", "Differential flatness and acceleration decoupling structure maps directly to PX4 / Pixhawk flight hardware.")
+        ("Modular ROS 2 Architecture:", "Clean decoupling across uav_control (100 Hz), uav_aerodynamics, uav_dashboard, and Gazebo physics bridge."),
+        ("Reproducible 1-Click Suite:", "Automated batch/shell scripts allow instant live verification of patrol and gust benchmarks."),
+        ("Hardware-Ready Formulation:", "Differential flatness and acceleration decoupling structure maps directly to PX4 / Pixhawk autopilot hardware.")
     ]
-    add_card(s8, 6.8, 1.5, 5.7, 5.2, "Engineering Deliverables", items_sum_right)
+    add_card(s7, 6.8, 1.45, 5.8, 5.4, "Engineering Deliverables", items_sum_right)
 
-    print(f"Saving presentation to {PPTX_PATH}...")
-    prs.save(PPTX_PATH)
-    print("Presentation saved successfully!")
+    target_paths = [
+        "/mnt/d/ROS/UAV_Disturbance_Observer_Project_Presentation.pptx",
+        "/mnt/d/ROS/UAV_Disturbance_Observer_Presentation.pptx"
+    ]
+    for p in target_paths:
+        try:
+            prs.save(p)
+            print(f"Presentation saved successfully to: {p}")
+        except Exception as e:
+            print(f"Notice: Could not save to {p} (file may be open in PowerPoint): {e}")
 
 if __name__ == "__main__":
     create_deck()
